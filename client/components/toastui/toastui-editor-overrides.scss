@@ -282,3 +282,15 @@
 .toastui-editor-contents th p {
   color: rgb(var(--theme-text));
 }
+
+// Markdown-only editor: hide the Write/Preview tabs
+.toastui-editor-defaultUI .toastui-editor-md-tab-container {
+  display: none !important;
+}
+
+// Don't shade lines that the markdown editor treats as code blocks
+// (e.g. lines indented with 4+ spaces)
+.toastui-editor-md-code-block-line-background,
+.dark .toastui-editor-md-code-block-line-background {
+  background-color: transparent;
+}
