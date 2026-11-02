@@ -283,8 +283,9 @@
   color: rgb(var(--theme-text));
 }
 
-// Markdown-only editor: hide the Write/Preview tabs
-.toastui-editor-defaultUI .toastui-editor-md-tab-container {
+// Markdown-only editor: hide the Write/Preview tabs and the toolbar
+.toastui-editor-defaultUI .toastui-editor-md-tab-container,
+.toastui-editor-defaultUI .toastui-editor-toolbar {
   display: none !important;
 }
 

@@ -23,9 +23,11 @@ onMounted(() => {
     ...baseOptions,
     el: editorElement.value,
     initialValue: props.initialValue,
-    // Markdown-only: no WYSIWYG mode switch, no Write/Preview tabs
+    // Markdown-only: no WYSIWYG mode switch, no Write/Preview tabs,
+    // no toolbar buttons
     initialEditType: "markdown",
     hideModeSwitch: true,
+    toolbarItems: [],
     previewStyle: "tab",
     events: {
       change: () => {
