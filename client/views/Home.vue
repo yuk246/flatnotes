@@ -1,38 +1,48 @@
 <template>
   <div class="flex h-full justify-center">
-    <div class="flex max-w-[500px] flex-1 flex-col items-center pt-[25vh]">
+    <div
+      class="flex max-w-[700px] flex-1 flex-col items-center pt-[6vh] md:pt-[15vh]"
+    >
       <Logo class="mb-5" />
-      <SearchInput class="mb-5 shadow-[0_0_20px] shadow-theme-shadow" />
+      <SearchInput
+        class="mb-6 w-full max-w-[500px] shadow-[0_0_20px] shadow-theme-shadow"
+      />
       <LoadingIndicator
         ref="loadingIndicator"
-        class="flex min-h-56 flex-col items-center"
+        class="min-h-56 w-full"
         hideLoader
       >
-        <p
-          v-if="notes.length > 0"
-          class="mb-2 text-xs font-bold uppercase text-theme-text-very-muted"
-        >
-          {{ globalStore.config.quickAccessTitle }}
-        </p>
-        <RouterLink
-          v-for="note in notes.slice(0, globalStore.config.quickAccessLimit)"
-          :to="{ name: 'note', params: { title: note.title } }"
-          class="mb-1"
-        >
-          <CustomButton :label="note.title" />
-        </RouterLink>
-        <RouterLink
-          v-if="notes.length > globalStore.config.quickAccessLimit"
-          :to="{
-            name: 'search',
-            query: {
-              term: globalStore.config.quickAccessTerm,
-              sortBy: searchSortOptions[globalStore.config.quickAccessSort],
-            },
-          }"
-          title="Show more"
-          ><CustomButton :iconPath="mdiDotsHorizontal"
-        /></RouterLink>
+        <div class="grid w-full grid-cols-2 gap-4">
+          <div v-for="section in sections" :key="section.title" class="min-w-0">
+            <p
+              class="mb-2 px-2 text-left text-xs font-bold uppercase text-theme-text-very-muted"
+            >
+              {{ section.title }}
+            </p>
+            <RouterLink
+              v-for="note in section.notes.slice(0, quickAccessLimit())"
+              :key="note.title"
+              :to="{ name: 'note', params: { title: note.title } }"
+              :title="note.title"
+              class="mb-1 block truncate rounded px-2 py-1 text-left text-theme-text-muted hover:bg-theme-background-elevated"
+            >
+              {{ note.title }}
+            </RouterLink>
+            <RouterLink
+              v-if="section.notes.length > quickAccessLimit()"
+              :to="{
+                name: 'search',
+                query: {
+                  term: section.term,
+                  sortBy: searchSortOptions[section.sort],
+                },
+              }"
+              title="Show more"
+              class="block w-fit"
+              ><CustomButton :iconPath="mdiDotsHorizontal"
+            /></RouterLink>
+          </div>
+        </div>
       </LoadingIndicator>
     </div>
   </div>
@@ -54,25 +64,38 @@ import SearchInput from "../partials/SearchInput.vue";
 
 const globalStore = useGlobalStore();
 const loadingIndicator = ref();
-const notes = ref([]);
 const toast = useToast();
+
+// Home page columns: pinned notes on the left, all notes on the right.
+const sections = ref([
+  { title: "Pinned", term: "#pinned", sort: "title", notes: [] },
+  { title: "All Notes", term: "*", sort: "lastModified", notes: [] },
+]);
+
+function quickAccessLimit() {
+  return globalStore.config.quickAccessLimit;
+}
 
 function init() {
   if (globalStore.config.quickAccessHide) {
     return;
   }
-  getNotes(
-    globalStore.config.quickAccessTerm,
-    globalStore.config.quickAccessSort,
-    // Order by ascending if sorting by title, descending otherwise.
-    globalStore.config.quickAccessSort === "title"
-      ? "asc"
-      : "desc",
-    // Limit is increased by 1 to check if there are more notes than the limit.
-    globalStore.config.quickAccessLimit + 1,
+  Promise.all(
+    sections.value.map((section) =>
+      getNotes(
+        section.term,
+        section.sort,
+        // Order by ascending if sorting by title, descending otherwise.
+        section.sort === "title" ? "asc" : "desc",
+        // Limit is increased by 1 to check if there are more notes than the limit.
+        quickAccessLimit() + 1,
+      ),
+    ),
   )
-    .then((data) => {
-      notes.value = data;
+    .then((results) => {
+      results.forEach((data, i) => {
+        sections.value[i].notes = data;
+      });
       loadingIndicator.value.setLoaded();
     })
     .catch((error) => {
