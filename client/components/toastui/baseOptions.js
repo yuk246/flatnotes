@@ -2,6 +2,10 @@ import codeSyntaxHighlight from "@toast-ui/editor-plugin-code-syntax-highlight/d
 import router from "../../router.js";
 
 const customHTMLRenderer = {
+  // Render single line breaks as they are typed (like GitHub comments)
+  softbreak() {
+    return { type: "html", content: "<br>\n" };
+  },
   // Add id attribute to headings
   heading(node, { entering, getChildrenText, origin }) {
     const original = origin();
