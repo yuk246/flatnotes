@@ -1,0 +1,39 @@
+name: Auto-merge into develop
+
+# Claude Code works on ccr-* branches. Merge every push on those branches
+# straight into develop (no PR needed), then build the Docker image.
+on:
+  push:
+    branches: ["ccr-**"]
+
+concurrency:
+  group: auto-merge-develop
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Merge ${{ github.ref_name }} into develop
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${GITHUB_REF_NAME}"
+          git merge --no-edit "origin/${GITHUB_REF_NAME}"
+          git push origin develop
+
+  # Pushes made with GITHUB_TOKEN don't trigger other workflows,
+  # so call the Docker build directly.
+  docker:
+    needs: merge
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/docker.yml

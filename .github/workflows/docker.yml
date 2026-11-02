@@ -4,6 +4,7 @@ on:
   push:
     branches: [develop]
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -14,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # When called from auto-merge, build the freshly merged develop
+          ref: ${{ github.event_name == 'push' && 'develop' || '' }}
 
       - uses: docker/setup-qemu-action@v3
 
