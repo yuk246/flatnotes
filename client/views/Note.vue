@@ -99,7 +99,6 @@
         v-if="editMode"
         ref="toastEditor"
         :initialValue="getInitialEditorValue()"
-        :initialEditType="loadDefaultEditorMode()"
         :addImageBlobHook="addImageBlobHook"
         @change="startContentChangedTimeout"
         @keydown="keydownHandler"
@@ -251,9 +250,6 @@ function deleteConfirmedHandler() {
 
 // Note Saving
 function saveHandler(close = false) {
-  // Save Default Editor Mode
-  saveDefaultEditorMode();
-
   // Empty Title Validation
   if (!newTitle.value) {
     toast.add(
@@ -511,19 +507,6 @@ function setBeforeUnloadConfirmation(enable = true) {
   } else {
     window.onbeforeunload = null;
   }
-}
-
-function saveDefaultEditorMode() {
-  const isWysiwygMode = toastEditor.value.isWysiwygMode();
-  localStorage.setItem(
-    "defaultEditorMode",
-    isWysiwygMode ? "wysiwyg" : "markdown",
-  );
-}
-
-function loadDefaultEditorMode() {
-  const defaultWysiwygMode = localStorage.getItem("defaultEditorMode");
-  return defaultWysiwygMode || "markdown";
 }
 
 function isContentChanged() {

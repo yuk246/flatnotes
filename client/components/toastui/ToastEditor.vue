@@ -10,10 +10,6 @@ import baseOptions from "./baseOptions.js";
 
 const props = defineProps({
   initialValue: String,
-  initialEditType: {
-    type: String,
-    default: "markdown",
-  },
   addImageBlobHook: Function,
 });
 
@@ -27,7 +23,10 @@ onMounted(() => {
     ...baseOptions,
     el: editorElement.value,
     initialValue: props.initialValue,
-    initialEditType: props.initialEditType,
+    // Markdown-only: no WYSIWYG mode switch, no Write/Preview tabs
+    initialEditType: "markdown",
+    hideModeSwitch: true,
+    previewStyle: "tab",
     events: {
       change: () => {
         emit("change");
@@ -46,11 +45,7 @@ function getMarkdown() {
   return toastEditor.getMarkdown();
 }
 
-function isWysiwygMode() {
-  return toastEditor.isWysiwygMode();
-}
-
-defineExpose({ getMarkdown, isWysiwygMode });
+defineExpose({ getMarkdown });
 </script>
 
 <style>
