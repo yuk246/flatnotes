@@ -4,7 +4,7 @@
 
 <script setup>
 import Editor from "@toast-ui/editor";
-import { onMounted, ref } from "vue";
+import { onBeforeUnmount, onMounted, ref } from "vue";
 
 import baseOptions from "./baseOptions.js";
 
@@ -18,7 +18,30 @@ const emit = defineEmits(["change", "keydown"]);
 const editorElement = ref();
 let toastEditor;
 
+const isMac = /Mac|iP(hone|[oa]d)/.test(navigator.platform);
+
+// Handle undo/redo shortcuts ourselves, matching on the physical key.
+// ProseMirror's keymap falls back from 'Shift-Mod-z' to 'Mod-z' when redo has
+// nothing to do, so depending on what `event.key` the browser reports (e.g.
+// Firefox) the redo shortcut could end up performing an undo.
+function historyKeydownHandler(event) {
+  const mod = isMac ? event.metaKey : event.ctrlKey;
+  if (!mod || event.altKey) return;
+  let command = null;
+  if (event.code === "KeyZ") {
+    command = event.shiftKey ? "redo" : "undo";
+  } else if (event.code === "KeyY" && !isMac && !event.shiftKey) {
+    command = "redo";
+  }
+  if (command === null) return;
+  event.preventDefault();
+  event.stopPropagation();
+  toastEditor.exec(command);
+}
+
 onMounted(() => {
+  // Capture phase so this runs before the editor's own key handling
+  editorElement.value.addEventListener("keydown", historyKeydownHandler, true);
   toastEditor = new Editor({
     ...baseOptions,
     el: editorElement.value,
@@ -41,6 +64,14 @@ onMounted(() => {
       ? { addImageBlobHook: props.addImageBlobHook }
       : {},
   });
+});
+
+onBeforeUnmount(() => {
+  editorElement.value?.removeEventListener(
+    "keydown",
+    historyKeydownHandler,
+    true,
+  );
 });
 
 function getMarkdown() {
