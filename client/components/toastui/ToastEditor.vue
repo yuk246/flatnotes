@@ -24,13 +24,15 @@ const isMac = /Mac|iP(hone|[oa]d)/.test(navigator.platform);
 // ProseMirror's keymap falls back from 'Shift-Mod-z' to 'Mod-z' when redo has
 // nothing to do, so depending on what `event.key` the browser reports (e.g.
 // Firefox) the redo shortcut could end up performing an undo.
+// Mod+Y is also accepted as redo on every platform, as some setups (seen in
+// Firefox on macOS) report Cmd+Shift+Z without the Shift modifier.
 function historyKeydownHandler(event) {
   const mod = isMac ? event.metaKey : event.ctrlKey;
   if (!mod || event.altKey) return;
   let command = null;
   if (event.code === "KeyZ") {
     command = event.shiftKey ? "redo" : "undo";
-  } else if (event.code === "KeyY" && !isMac && !event.shiftKey) {
+  } else if (event.code === "KeyY" && !event.shiftKey) {
     command = "redo";
   }
   if (command === null) return;
