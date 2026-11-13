@@ -39,61 +39,71 @@
   />
 
   <LoadingIndicator ref="loadingIndicator" class="flex h-full flex-col">
-    <!-- Header -->
-    <div class="flex flex-col-reverse md:flex-row md:items-baseline">
-      <!-- Title -->
-      <div class="grow truncate text-3xl leading-[1.6em]">
-        <span v-show="!editMode" :title="note.title">{{ note.title }}</span>
-        <input
-          v-show="editMode"
-          v-model.trim="newTitle"
-          class="w-full bg-theme-background outline-none"
-          placeholder="Title"
-        />
+    <!-- Header (shown in the app's auto-hiding top header) -->
+    <Teleport defer to="#page-header">
+      <div class="flex flex-col-reverse md:flex-row md:items-baseline">
+        <!-- Title -->
+        <div class="grow truncate text-3xl leading-[1.6em]">
+          <span v-show="!editMode" :title="note.title">{{ note.title }}</span>
+          <input
+            v-show="editMode"
+            v-model.trim="newTitle"
+            class="w-full bg-theme-background outline-none"
+            placeholder="Title"
+          />
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex shrink-0 self-end md:self-baseline print:hidden">
+          <!-- Delete Button -->
+          <CustomButton
+            v-show="canModify && !isNewNote"
+            label="Delete"
+            :iconPath="mdilDelete"
+            @click="deleteHandler"
+          />
+          <!-- Save Button -->
+          <CustomButton
+            v-show="editMode"
+            label="Save"
+            :iconPath="mdilContentSave"
+            @click="saveHandler((close = false))"
+            class="relative ml-1"
+          >
+            <!-- Unsaved Changes Indicator -->
+            <div
+              v-show="unsavedChanges"
+              class="absolute right-1 h-1.5 w-1.5 rounded-full bg-theme-brand"
+            ></div>
+          </CustomButton>
+          <!-- Edit Toggle -->
+          <Toggle
+            v-if="canModify"
+            label="Edit"
+            :isOn="editMode"
+            class="ml-1"
+            @click="toggleEditModeHandler"
+          />
+        </div>
       </div>
 
-      <!-- Buttons -->
-      <div class="flex shrink-0 self-end md:self-baseline print:hidden">
-        <!-- Delete Button -->
-        <CustomButton
-          v-show="canModify && !isNewNote"
-          label="Delete"
-          :iconPath="mdilDelete"
-          @click="deleteHandler"
-        />
-        <!-- Save Button -->
-        <CustomButton
-          v-show="editMode"
-          label="Save"
-          :iconPath="mdilContentSave"
-          @click="saveHandler((close = false))"
-          class="relative ml-1"
-        >
-          <!-- Unsaved Changes Indicator -->
-          <div
-            v-show="unsavedChanges"
-            class="absolute right-1 h-1.5 w-1.5 rounded-full bg-theme-brand"
-          ></div>
-        </CustomButton>
-        <!-- Edit Toggle -->
-        <Toggle
-          v-if="canModify"
-          label="Edit"
-          :isOn="editMode"
-          class="ml-1"
-          @click="toggleEditModeHandler"
-        />
+      <!-- Last Modified -->
+      <div
+        v-if="!editMode && note.lastModified"
+        class="text-sm text-theme-text-muted"
+      >
+        {{ note.lastModifiedAsString }}
       </div>
-    </div>
 
-    <hr v-if="!editMode" class="my-4 border-theme-border" />
+      <hr v-if="!editMode" class="mt-4 border-theme-border" />
+    </Teleport>
 
     <!-- Content -->
     <div class="flex-1">
       <ToastViewer
         v-if="!editMode"
         :initialValue="note.content"
-        class="toast-viewer pb-4"
+        class="toast-viewer pb-4 pt-4"
       />
       <ToastEditor
         v-if="editMode"
@@ -122,7 +132,7 @@ import { mdiNoteOffOutline } from "@mdi/js";
 import { mdilContentSave, mdilDelete } from "@mdi/light-js";
 import Mousetrap from "mousetrap";
 import { useToast } from "primevue/usetoast";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import {
@@ -515,6 +525,18 @@ function isContentChanged() {
     toastEditor.value.getMarkdown() != note.value.content
   );
 }
+
+// Let the top header auto-hide only while viewing (not editing) a note
+watch(
+  editMode,
+  (isEditing) => {
+    globalStore.headerAutoHide = !isEditing;
+  },
+  { immediate: true },
+);
+onUnmounted(() => {
+  globalStore.headerAutoHide = true;
+});
 
 watch(() => props.title, init);
 onMounted(init);
